@@ -1,0 +1,21 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Xthings Locks",
+        "description": "Same email and password as the Xthings Home app. State is polled from the cloud; Wi-Fi lock/unlock is MQTT and not enabled yet.",
+        "data": {
+          "email": "Email",
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Login failed",
+      "cannot_connect": "Could not reach Xthings cloud"
+    },
+    "abort": {
+      "already_configured": "This Xthings account is already configured"
+    }
+  }
+}

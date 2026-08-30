@@ -1,0 +1,9 @@
+*.apk
+*.dex
+__pycache__/
+*.pyc
+.env
+secrets*
+*.p12
+*.pem
+/tmp/
