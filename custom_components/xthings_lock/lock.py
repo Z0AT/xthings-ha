@@ -6,6 +6,7 @@ from homeassistant.components.lock import LockEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -16,7 +17,7 @@ from .coordinator import XthingsCoordinator
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    coordinator: XthingsCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator: XthingsCoordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
     async_add_entities(
         XthingsLock(coordinator, uuid) for uuid in coordinator.data
     )
@@ -25,20 +26,19 @@ async def async_setup_entry(
 class XthingsLock(CoordinatorEntity[XthingsCoordinator], LockEntity):
     _attr_has_entity_name = True
     _attr_name = None
-    _attr_supported_features = 0
 
     def __init__(self, coordinator: XthingsCoordinator, uuid: str) -> None:
         super().__init__(coordinator)
         self._uuid = uuid
         self._attr_unique_id = f"{uuid}_lock"
         dev = coordinator.data[uuid]
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, uuid)},
-            "name": dev.get("name") or uuid,
-            "manufacturer": "Xthings / ULTRALOQ",
-            "model": dev.get("model") or "Bolt",
-            "sw_version": str((dev.get("params") or {}).get("version") or ""),
-        }
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, uuid)},
+            name=dev.get("name") or uuid,
+            manufacturer="U-tec",
+            model=dev.get("model") or "ULTRALOQ Bolt",
+            sw_version=str((dev.get("params") or {}).get("version") or "") or None,
+        )
 
     def _dev(self) -> dict[str, Any]:
         return self.coordinator.data.get(self._uuid) or {}
@@ -65,10 +65,21 @@ class XthingsLock(CoordinatorEntity[XthingsCoordinator], LockEntity):
         }
 
     async def async_lock(self, **kwargs: Any) -> None:
-        raise HomeAssistantError(
-            "Wi-Fi lock/unlock is MQTT to AWS IoT (app client cert), not HTTP. "
-            "Use the Xthings app or BLE until MQTT is wired."
-        )
+        if not self.coordinator.can_command:
+            raise HomeAssistantError(
+                "OpenAPI is not linked yet. Finish Xthings OAuth in Home Assistant."
+            )
+        self.coordinator.set_optimistic(self._uuid, True)
+        await self.coordinator.async_command(self._uuid, "lock")
+        self.async_write_ha_state()
+        await self.coordinator.async_request_refresh()
 
     async def async_unlock(self, **kwargs: Any) -> None:
-        await self.async_lock()
+        if not self.coordinator.can_command:
+            raise HomeAssistantError(
+                "OpenAPI is not linked yet. Finish Xthings OAuth in Home Assistant."
+            )
+        self.coordinator.set_optimistic(self._uuid, False)
+        await self.coordinator.async_command(self._uuid, "unlock")
+        self.async_write_ha_state()
+        await self.coordinator.async_request_refresh()

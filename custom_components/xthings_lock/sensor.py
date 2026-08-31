@@ -4,6 +4,7 @@ from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, Sen
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import SIGNAL_STRENGTH_DECIBELS_MILLIWATT
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -15,7 +16,7 @@ from .coordinator import XthingsCoordinator
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    coordinator: XthingsCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator: XthingsCoordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
     ents: list = []
     for uuid in coordinator.data:
         ents.append(XthingsBattery(coordinator, uuid))
@@ -30,12 +31,12 @@ class _Base(CoordinatorEntity[XthingsCoordinator], SensorEntity):
         super().__init__(coordinator)
         self._uuid = uuid
         dev = coordinator.data[uuid]
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, uuid)},
-            "name": dev.get("name") or uuid,
-            "manufacturer": "Xthings / ULTRALOQ",
-            "model": dev.get("model") or "Bolt",
-        }
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, uuid)},
+            name=dev.get("name") or uuid,
+            manufacturer="U-tec",
+            model=dev.get("model") or "ULTRALOQ Bolt",
+        )
 
     def _params(self) -> dict:
         return (self.coordinator.data.get(self._uuid) or {}).get("params") or {}

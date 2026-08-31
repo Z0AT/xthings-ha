@@ -9,6 +9,8 @@ from typing import Any
 
 from aiohttp import ClientSession
 
+from uuid import uuid4
+
 from .const import (
     ADDRESS_URL,
     APP_ID,
@@ -16,6 +18,7 @@ from .const import (
     DEVICE_GET_URL,
     DEVICE_LIST_URL,
     LOGIN_URL,
+    OPENAPI_ACTION,
     ROOM_URL,
     TOKEN_URL,
     USER_AGENT,
@@ -31,10 +34,17 @@ class XthingsApiError(Exception):
 
 
 class XthingsClient:
-    def __init__(self, email: str, password: str, session: ClientSession) -> None:
+    def __init__(
+        self,
+        email: str,
+        password: str,
+        session: ClientSession,
+        timezone_offset: str = "0",
+    ) -> None:
         self._email = email
         self._password = password
         self._session = session
+        self._timezone = timezone_offset
         self._token: str | None = None
         self._mobile_uuid = "".join(
             secrets.choice(string.ascii_uppercase + string.digits) for _ in range(32)
@@ -75,7 +85,7 @@ class XthingsClient:
                 {
                     "appid": APP_ID,
                     "clientid": CLIENT_ID,
-                    "timezone": "-4",
+                    "timezone": self._timezone,
                     "uuid": self._mobile_uuid,
                     "version": "V3.2",
                 },
@@ -175,3 +185,81 @@ class XthingsClient:
                     merged["user"] = {"uid": (merged.get("user") or {}).get("uid")}
                 devices.append(merged)
         return devices
+
+
+async def openapi_command(
+    session: ClientSession,
+    access_token: str,
+    device_id: str,
+    command: str,
+) -> dict[str, Any]:
+    """Send st.lock lock/unlock via official OpenAPI (cloud → lock Wi-Fi)."""
+    payload = {
+        "header": {
+            "namespace": "Uhome.Device",
+            "name": "Command",
+            "messageId": str(uuid4()),
+            "payloadVersion": "1",
+        },
+        "payload": {
+            "devices": [
+                {
+                    "id": device_id,
+                    "command": {"capability": "st.lock", "name": command},
+                }
+            ]
+        },
+    }
+    headers = {
+        "accept": "application/json",
+        "content-type": "application/json",
+        "authorization": f"Bearer {access_token}",
+        "user-agent": USER_AGENT,
+    }
+    async with session.post(OPENAPI_ACTION, json=payload, headers=headers, timeout=60) as resp:
+        data = await resp.json(content_type=None)
+        if resp.status >= 400:
+            raise XthingsApiError(f"OpenAPI HTTP {resp.status}")
+        err = (data.get("payload") or {}).get("error") if isinstance(data, dict) else None
+        if err:
+            raise XthingsApiError(err.get("message") or str(err))
+        return data if isinstance(data, dict) else {}
+
+
+async def openapi_configure_notification(
+    session: ClientSession,
+    access_token: str,
+    url: str,
+    push_secret: str,
+) -> dict[str, Any]:
+    """Tell Xthings cloud to POST DeviceState events to HA."""
+    payload = {
+        "header": {
+            "namespace": "Uhome.Configure",
+            "name": "Set",
+            "messageId": str(uuid4()),
+            "payloadVersion": "1",
+        },
+        "payload": {
+            "configure": {
+                "notification": {
+                    "access_token": push_secret,
+                    "url": url,
+                }
+            }
+        },
+    }
+    headers = {
+        "accept": "application/json",
+        "content-type": "application/json",
+        "authorization": f"Bearer {access_token}",
+        "user-agent": USER_AGENT,
+    }
+    async with session.post(OPENAPI_ACTION, json=payload, headers=headers, timeout=60) as resp:
+        data = await resp.json(content_type=None)
+        if resp.status >= 400:
+            raise XthingsApiError(f"OpenAPI notify HTTP {resp.status}")
+        err = (data.get("payload") or {}).get("error") if isinstance(data, dict) else None
+        if err:
+            raise XthingsApiError(err.get("message") or str(err))
+        return data if isinstance(data, dict) else {}
