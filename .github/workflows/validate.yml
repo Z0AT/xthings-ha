@@ -17,14 +17,10 @@ jobs:
       - uses: actions/checkout@v5
       - uses: home-assistant/actions/hassfest@master
 
-  # HACS downloads hacs.json / manifest.json from raw.githubusercontent.com, which
-  # 404s on private repos. Turn this job on when the repository is public.
   hacs:
-    if: false
     runs-on: ubuntu-latest
     steps:
       - name: HACS validation
         uses: hacs/action@main
         with:
           category: integration
-          ignore: brands images
