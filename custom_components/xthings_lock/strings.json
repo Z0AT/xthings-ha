@@ -7,7 +7,7 @@
       },
       "account": {
         "title": "Xthings account",
-        "description": "Use the same email and password as the Xthings Home app. That account is used to list locks and poll status (battery, RSSI, locked/unlocked).\n\nLock and unlock need OpenAPI: create a client in the app (My Account → OpenAPI), add Application credentials in Home Assistant first, then authorize on the next screen.\n\nRedirect URI for the OpenAPI client: https://my.home-assistant.io/redirect/oauth",
+        "description": "Use the same email and password as the Xthings Home app. That account is used to list locks and poll status (battery, RSSI, locked/unlocked).\n\nLock and unlock need OpenAPI: create a client in the app (My Account → OpenAPI), add Application credentials in Home Assistant first, then authorize on the next screen. The required redirect URI is in the integration documentation.",
         "data": {
           "email": "Email",
           "password": "Password"
@@ -20,12 +20,12 @@
     },
     "error": {
       "invalid_auth": "Login failed. Use the Xthings Home app email and password, not the OpenAPI client id.",
-      "cannot_connect": "Could not reach Xthings cloud (cloud.u-tec.com)."
+      "cannot_connect": "Could not reach Xthings cloud."
     },
     "abort": {
       "already_configured": "This Xthings account is already configured",
       "reauth_successful": "OpenAPI linked. Lock/unlock over Wi-Fi is enabled.",
-      "missing_credentials": "Add Xthings OpenAPI application credentials first: Settings → Devices & services → Application credentials. Client id and secret come from the Xthings Home app (My Account → OpenAPI). Redirect URI: https://my.home-assistant.io/redirect/oauth",
+      "missing_credentials": "Add Xthings OpenAPI application credentials first: Settings → Devices & services → Application credentials. Client id and secret come from the Xthings Home app (My Account → OpenAPI). See the integration documentation for the redirect URI.",
       "authorize_url_timeout": "Timeout generating authorize URL",
       "no_url_available": "No URL available. Set Home Assistant URL under Settings → System → Network.",
       "oauth_error": "OAuth error",
@@ -35,6 +35,6 @@
     }
   },
   "application_credentials": {
-    "description": "Create a client in the Xthings Home app (My Account → OpenAPI). Redirect URI must be https://my.home-assistant.io/redirect/oauth. Scope: openapi. Then paste the client id and secret here. See the integration documentation for the full walkthrough."
+    "description": "Create a client in the Xthings Home app (My Account → OpenAPI). Follow the [documentation]({docs_url}) for the redirect URI and scope, then paste the client id and secret here."
   }
 }
