@@ -1,5 +1,9 @@
 # Xthings Locks (ULTRALOQ Wi-Fi)
 
+<p align="center">
+  <img src="custom_components/xthings_lock/brand/icon.png" width="160" alt="ZOAT / Xthings Locks">
+</p>
+
 Unofficial [Home Assistant](https://www.home-assistant.io/) integration for **ULTRALOQ / U-tec** smart locks through the **Xthings Home** cloud.
 
 This is **not** local LAN control. The Bolt SE (and similar Wi-Fi models) do not expose a lock/unlock TCP API on your network. Status is polled from Xthings cloud; lock and unlock use U-tec’s documented **OpenAPI**.
@@ -74,8 +78,17 @@ Without OpenAPI credentials, the integration can still **read** lock state. Lock
 
 ## HACS default store
 
-This repo is structured for HACS (single integration under `custom_components/`, `hacs.json`, releases, hassfest + HACS validation). Submitting it to [hacs/default](https://github.com/hacs/default) is a later step after the GitHub repository is public and CI is green.
+This repo is structured for HACS (single integration under `custom_components/`, `hacs.json`, releases, hassfest). To appear in the HACS search UI without adding a custom repository:
+
+1. Make **https://github.com/Z0AT/xthings-ha** public
+2. Turn on the HACS GitHub Action (no `ignore`) and keep it green
+3. Publish a GitHub **release** after that
+4. Open a PR against [hacs/default](https://github.com/hacs/default) adding `Z0AT/xthings-ha` to the `integration` list (alphabetically)
+
+Brand icons ship **in this repo** (`custom_components/xthings_lock/brand/`). Home Assistant 2026.3+ loads those locally. Do **not** PR [home-assistant/brands](https://github.com/home-assistant/brands) for custom integrations — they reject those now.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT for the integration code. See [LICENSE](LICENSE).
+
+The ZOAT mark in `brand/` is the project logo (PNG, transparent). It is not a U-tec / ULTRALOQ trademark.
