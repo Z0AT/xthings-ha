@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.3
+
+- Full setup walkthrough in the README (HACS, OpenAPI client, Application credentials, OAuth, troubleshooting)
+- Clearer config-flow and application-credentials copy in the UI
+
+## 0.2.2
+
+- Public HACS-ready release after hassfest + HACS validation
+
 ## 0.2.1
 
 - ZOAT mark as integration icon/logo (PNG with real alpha)
