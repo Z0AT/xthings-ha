@@ -3,13 +3,14 @@ from __future__ import annotations
 
 import logging
 import time
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Any
-from zoneinfo import ZoneInfo
 
 from aiohttp import ClientSession
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 
 from .api import XthingsApiError, XthingsAuthError, XthingsClient, openapi_command
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, OPTIMISTIC_SECONDS
@@ -17,16 +18,12 @@ from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, OPTIMISTIC_SECONDS
 _LOGGER = logging.getLogger(__name__)
 
 
-def _tz_hours(hass: HomeAssistant) -> str:
+def _tz_hours() -> str:
     """UTC offset hours for the Xthings app login payload."""
-    try:
-        tz = ZoneInfo(hass.config.time_zone or "UTC")
-        offset = datetime.now(tz).utcoffset()
-        if offset is None:
-            return "0"
-        return str(int(offset.total_seconds() // 3600))
-    except Exception:  # noqa: BLE001
+    offset = dt_util.now().utcoffset()
+    if offset is None:
         return "0"
+    return str(int(offset.total_seconds() // 3600))
 
 
 def _lock_value_from_state(value: Any) -> int | None:
@@ -60,7 +57,7 @@ class XthingsCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
             update_interval=timedelta(seconds=DEFAULT_SCAN_INTERVAL),
         )
         self.client = XthingsClient(
-            email, password, session, timezone_offset=_tz_hours(hass)
+            email, password, session, timezone_offset=_tz_hours()
         )
         self._session = session
         self.oauth_session = oauth_session
@@ -149,7 +146,7 @@ class XthingsCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
         try:
             devices = await self.client.async_get_devices()
         except XthingsAuthError as err:
-            raise UpdateFailed(f"Xthings login failed: {err}") from err
+            raise ConfigEntryAuthFailed(f"Xthings login failed: {err}") from err
         except XthingsApiError as err:
             raise UpdateFailed(str(err)) from err
         out: dict[str, dict[str, Any]] = {}

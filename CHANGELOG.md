@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.4
+
+- Use Home Assistant's cached time zone for the login UTC offset (no `ZoneInfo` disk I/O on the event loop)
+- Raise `ConfigEntryAuthFailed` when the Xthings password is rejected so Home Assistant starts reauthentication
+- Reauth updates the existing account instead of aborting as already configured when OpenAPI credentials are not set up
+
 ## 0.2.3
 
 - Full setup walkthrough in the README (HACS, OpenAPI client, Application credentials, OAuth, troubleshooting)
