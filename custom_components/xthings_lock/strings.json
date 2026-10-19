@@ -24,7 +24,9 @@
     },
     "abort": {
       "already_configured": "This Xthings account is already configured",
-      "reauth_successful": "OpenAPI linked. Lock/unlock over Wi-Fi is enabled.",
+      "reauth_successful": "Reauthentication successful. The Xthings password was updated.",
+      "reauth_failed": "Could not update this Xthings account. Remove the integration and add it again.",
+      "oauth_linked": "OpenAPI linked. Lock/unlock over Wi-Fi is enabled.",
       "missing_credentials": "Add Xthings OpenAPI application credentials first: Settings → Devices & services → Application credentials. Client id and secret come from the Xthings Home app (My Account → OpenAPI). See the integration documentation for the redirect URI.",
       "authorize_url_timeout": "Timeout generating authorize URL",
       "no_url_available": "No URL available. Set Home Assistant URL under Settings → System → Network.",

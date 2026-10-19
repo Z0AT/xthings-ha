@@ -4,6 +4,7 @@ import logging
 from typing import Any
 
 import voluptuous as vol
+from homeassistant.config_entries import SOURCE_REAUTH
 from homeassistant.helpers import config_entry_oauth2_flow
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
@@ -75,12 +76,17 @@ class XthingsOAuth2FlowHandler(
                     )
                 )
                 if not implementations:
+                    if self.source == SOURCE_REAUTH:
+                        return self._async_update_reauth_entry()
                     self._abort_if_unique_id_configured()
                     return self._async_create_account_entry()
                 return await self.async_step_pick_implementation()
+        suggested: dict[str, Any] = {}
+        if self.source == SOURCE_REAUTH and self._email:
+            suggested[CONF_EMAIL] = self._email
         return self.async_show_form(
             step_id="account",
-            data_schema=STEP_ACCOUNT,
+            data_schema=self.add_suggested_values_to_schema(STEP_ACCOUNT, suggested),
             errors=errors,
         )
 
@@ -90,6 +96,26 @@ class XthingsOAuth2FlowHandler(
         return self.async_create_entry(
             title=title,
             data={CONF_EMAIL: self._email, CONF_PASSWORD: self._password},
+        )
+
+    def _async_update_reauth_entry(self):
+        """Store new credentials on the entry that started reauthentication."""
+        entry = self.hass.config_entries.async_get_entry(self.context["entry_id"])
+        if entry is None:
+            return self.async_abort(reason="reauth_failed")
+        other = self.hass.config_entries.async_entry_for_domain_unique_id(
+            DOMAIN, (self._email or "").lower()
+        )
+        if other is not None and other.entry_id != entry.entry_id:
+            return self.async_abort(reason="already_configured")
+        return self.async_update_reload_and_abort(
+            entry,
+            unique_id=(self._email or "").lower() or entry.unique_id,
+            data={
+                **entry.data,
+                CONF_EMAIL: self._email,
+                CONF_PASSWORD: self._password,
+            },
         )
 
     async def async_oauth_create_entry(self, data: dict[str, Any]):
@@ -105,7 +131,7 @@ class XthingsOAuth2FlowHandler(
                     entry, data={**entry.data, **combined}
                 )
                 await self.hass.config_entries.async_reload(entry.entry_id)
-                return self.async_abort(reason="reauth_successful")
+                return self.async_abort(reason="oauth_linked")
         n = self._device_count
         title = f"Xthings ({n} lock{'s' if n != 1 else ''})" if n else "Xthings"
         return self.async_create_entry(title=title, data=combined)
